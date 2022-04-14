@@ -68,19 +68,26 @@ jobs:
         run: |
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/m-dev:tomcat_latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/m-dev:$GITHUB_RUN_NUMBER
-      
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-southeast-2
           
-      - name: Connect EKS
-        run: aws eks update-kubeconfig --region ap-southeast-2 --name koocluster1
-        
-      - name: was-deploy restart
-        run: kubectl rollout restart deployment/was
+      - name: deploy to cluster
+        uses: qazz92/kubectl@1.0.3
+        env:
+          kube_confg_data: ${{ secrets.KUBE_CONFIG_DATA }}
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: ${{ secrets.AWS_DEFAULT_REGION }}
+        with:
+          args: set image deployment was was=${{ secrets.DOCKERHUB_USERNAME }}/m-dev:$GITHUB_RUN_NUMBER
+ 
+      - name: verify deployment
+        uses: qazz92/kubectl@1.0.3
+        env:
+          kube_confg_data: ${{ secrets.KUBE_CONFIG_DATA }}
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: ${{ secrets.AWS_DEFAULT_REGION }}
+        with:
+          args: '"rollout status deployment/was"'
         
       - name: Change file name
         run: mv ./build/libs/my-spring-board-0.0.1-SNAPSHOT.war ./build/libs/`date +%Y%m%d%H%M%S`.war
