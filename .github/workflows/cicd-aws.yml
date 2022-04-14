@@ -28,17 +28,17 @@ jobs:
       - name: echo
         run: echo "This is Checkout"
 
-      - name: install jdk
+      - name: Install jdk
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '11'
           cache: 'gradle'
       
-      - name: chmod gradle
+      - name: Chmod gradle
         run: chmod +x ./gradlew
         
-      - name: build
+      - name: Gradle build
         run: ./gradlew build --no-daemon
         
       - name: check build
@@ -48,7 +48,7 @@ jobs:
         id: buildx
         uses: docker/setup-buildx-action@v1
         
-      - name: docker ps
+      - name: Docker ps
         run: docker ps
 
       - name: docker build
@@ -64,7 +64,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: docker push
+      - name: Docker push
         run: |
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/m-dev:tomcat_latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/m-dev:$GITHUB_RUN_NUMBER
@@ -72,7 +72,7 @@ jobs:
       - name: Change file name
         run: mv ./build/libs/my-spring-board-0.0.1-SNAPSHOT.war ./build/libs/`date +%Y%m%d%H%M%S`.war
           
-      - name: deploy to cluster
+      - name: Deploy to Cluster
         uses: qazz92/kubectl@1.0.3
         env:
           kube_confg_data: ${{ secrets.KUBE_CONFIG_DATA }}
@@ -81,16 +81,6 @@ jobs:
           aws_region: ${{ secrets.AWS_DEFAULT_REGION }}
         with:
           args: set image deployment was was=${{ secrets.DOCKERHUB_USERNAME }}/m-dev:$GITHUB_RUN_NUMBER
- 
-      - name: verify deployment
-        uses: qazz92/kubectl@1.0.3
-        env:
-          kube_confg_data: ${{ secrets.KUBE_CONFIG_DATA }}
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws_region: ${{ secrets.AWS_DEFAULT_REGION }}
-        with:
-          args: '"rollout status deployment/was"'
 
       - name: Copy a file to s3
         uses: prewk/s3-cp-action@v2
@@ -98,4 +88,4 @@ jobs:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           source: ./build/libs/*war
-          dest: s3://koo5634
+          dest: s3://${{ secrets.AWS_S3_BUCKET_NAME }}
