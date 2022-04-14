@@ -75,7 +75,7 @@ jobs:
           cluster_name: koocluster
           location: us-central1-c
           project_id: koo-project-343400
-          credentials: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          credentials: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY_2 }}
           
       - name: was-deploy restart
         run: kubectl rollout restart deployment/was
